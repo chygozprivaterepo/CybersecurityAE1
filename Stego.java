@@ -59,7 +59,7 @@ class Steg
 
 		int i = 0, j=0;
 
-while(j < noOfPixels){
+		while(j < noOfPixels){
 			
 			if(i == dataToHide.length()){
 				break;
@@ -232,15 +232,6 @@ while(j < noOfPixels){
 	}
 	
 	/**
-	 * method to get the number of bytes that can be stored in the cover image
-	 * @param image the cover image
-	 * @return the number of bytes
-	 */
-	private int getNoOfAvailableBytes(String image){
-		return getImageWidth(image) * getImageHeight(image) * 3; 
-	}
-	
-	/**
 	 * method to get the binary equivalent of a string
 	 * @param s the string to be converted
 	 * @return the binary equivalent
@@ -278,29 +269,6 @@ while(j < noOfPixels){
 		int noOfBitsInPayload = bin.length();
 		int noOfBitsForPayloadBinarySize = stringToBinary(noOfBitsInPayload+"").length();
 		return noOfBitsInPayload + noOfBitsForPayloadBinarySize;
-	}
-	
-	/**
-	 * method to get the total number of bits that make up the payload binary string
-	 * @param s the total binary string extracted from stego image
-	 * @return the payload size
-	 */
-	private int getPayloadSizeFromStegoString(String s){
-		String r = "";
-		for(int i=0; i<32; i++)
-			r+=s.charAt(i);
-		int size = Integer.parseInt(r,2);
-		return size;
-	}
-	
-	/**
-	 * method to get the payload data from the stego image
-	 * @param s the total binary string extracted from stego image
-	 * @return the payload binary data
-	 */
-	private String getPayloadDataFromStegoString(String s){
-		int payloadSize = getPayloadSizeFromStegoString(s);
-		return binaryToString(s.substring(32, 32+payloadSize));
 	}
 
 	private ArrayList<Integer> getImagePixels (String imageName){
