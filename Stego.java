@@ -60,36 +60,39 @@ class Steg
 
 		int i = 0, j=0;
 
-		while(j < noOfPixels){
+		while(j < noOfPixels && i < dataToHide.length()){
+			int aa = 255;
+			Integer in = pixels.get(j);
 			if(i < dataToHide.length()){
-				Integer in = pixels.get(j);
-				
 				int bitToHide1 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int red = (in >> 16) & 0x000000FF;
 				int newRed = swapLsb(bitToHide1, red);
+				aa = (aa << 8) + newRed;
 				i++;
-				
+			}
+		
+			
+			if(i < dataToHide.length()){
 				int bitToHide2 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int green = (in >> 8) & 0x000000FF;
 				int newGreen = swapLsb(bitToHide2, green);
+				aa = (aa << 8) + newGreen;
 				i++;
-				
+			}
+			
+			
+			if(i < dataToHide.length()){
 				int bitToHide3 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int blue = in & 0x000000FF;
 				int newBlue = swapLsb(bitToHide3, blue);
-				i++;
-				
-				int aa = 255;
-				aa = (aa << 8) + newRed;
-				aa = (aa << 8) + newGreen;
 				aa = (aa << 8) + newBlue;
-				
-				pixels.set(j, aa);
+				i++;
 			}
+			
+			pixels.set(j, aa);
 			j++;
-		}	
+		}		
 		
-		//saveStegoImage("colours.bmp",pixels);	
 		String output = "stego_"+cover_filename;
 		saveStegoImage(output, cover_filename, pixels);
 		return output;
@@ -243,7 +246,7 @@ class Steg
 	 */
 	private String binaryToString(String bin){
 		String s = "";
-		for(int i=0; i<bin.length(); i=i+8){
+		for(int i=0; i<bin.length()-8; i=i+8){
 			String byt = bin.substring(i, i+8);
 			s += (char)Integer.parseInt(byt, 2);
 		}

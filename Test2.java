@@ -8,8 +8,8 @@ public class Test2 {
 	
 	public static void main (String [] args){
 		
-		String payload = "Now let us hide some stuff";
-		String binaryPayload = stringToBinary(payload);
+		//String payload = "Now let us hide some stufffff";
+		String payload = "this thing gotta work now or else i'm going to be really pissed";
 		hideString(payload,"colours.bmp");
 		System.out.println("Extracting...");
 		extractString("stegoimage.bmp");
@@ -26,37 +26,45 @@ public class Test2 {
 		}
 	
 		String bitsForSize = String.format("%032d",Integer.parseInt(Integer.toBinaryString(binaryPayload.length())));
+		//System.out.println(binaryPayload);
+		//System.out.println(bitsForSize);
 		//String bitsForSize = String.format("%032d",Integer.parseInt(stringToBinary(binaryPayload.length()+"")));
 		String dataToHide = bitsForSize + binaryPayload;
+		System.out.println(dataToHide);
 
 		int i = 0, j=0;
 
-		while(j < noOfPixels){
+		while(j < noOfPixels && i < dataToHide.length()){
+			int aa = 255;
+			Integer in = pixels.get(j);
 			if(i < dataToHide.length()){
-				Integer in = pixels.get(j);
-				
 				int bitToHide1 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int red = (in >> 16) & 0x000000FF;
 				int newRed = flipBit(bitToHide1, red);
+				aa = (aa << 8) + newRed;
 				i++;
-				
+			}
+		
+			
+			if(i < dataToHide.length()){
 				int bitToHide2 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int green = (in >> 8) & 0x000000FF;
 				int newGreen = flipBit(bitToHide2, green);
+				aa = (aa << 8) + newGreen;
 				i++;
-				
+			}
+			
+			
+			if(i < dataToHide.length()){
 				int bitToHide3 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int blue = in & 0x000000FF;
 				int newBlue = flipBit(bitToHide3, blue);
-				i++;
-				
-				int aa = 255;
-				aa = (aa << 8) + newRed;
-				aa = (aa << 8) + newGreen;
 				aa = (aa << 8) + newBlue;
-				
-				pixels.set(j, aa);
+				i++;
 			}
+			
+			
+			pixels.set(j, aa);
 			j++;
 		}	
 		
@@ -246,7 +254,7 @@ public class Test2 {
 		String bin = "";
 		for(int i=0; i<s.length(); i++)
 		{
-			int bch = Integer.parseInt(Integer.toBinaryString((int)s.charAt(i)));
+			int bch = Integer.parseInt(Integer.toBinaryString((int)(s.charAt(i))));
 			bin += String.format("%08d", bch);
 		}
 		return bin;
@@ -259,7 +267,7 @@ public class Test2 {
 	 */
 	private static String binaryToString(String bin){
 		String s = "";
-		for(int i=0; i<bin.length(); i=i+8){
+		for(int i=0; i<bin.length()-8; i=i+8){
 			String byt = bin.substring(i, i+8);
 			s += (char)Integer.parseInt(byt, 2);
 		}
