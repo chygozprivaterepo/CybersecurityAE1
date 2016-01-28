@@ -175,11 +175,22 @@ public class Test2 {
 		return imageIn.getHeight();
 	}
 	
+	/**
+	 * method to get the type of image. The type could be TYPE_INT_RGB, TYPE_INT_ARGB, etc
+	 * @param image to be worked on
+	 * @return the image type
+	 * @throws IOException
+	 */
 	private static int getImageType(String image) throws IOException{
 		BufferedImage imageIn = ImageIO.read(new File(image));
 		return imageIn.getType();
 	}
 	
+	/**
+	 * method to save the stego image
+	 * @param image to be saved
+	 * @param pixels the list containing the pixels with payload data embedded
+	 */
 	private static void saveStegoImage(String image, ArrayList<Integer> pixels){
 		int index = image.lastIndexOf('.');
 		String extension = image.substring(index+1);
@@ -217,6 +228,11 @@ public class Test2 {
 		return component & 0x00000001;
 	}
 	
+	/**
+	 * method to get the number of bytes that can be stored in the cover image
+	 * @param image the cover image
+	 * @return the number of bytes
+	 */
 	private static int getNoOfAvailableBytes(String image){
 		return getImageWidth(image) * getImageHeight(image) * 3; 
 	}
@@ -236,6 +252,11 @@ public class Test2 {
 		return bin;
 	}
 	
+	/**
+	 * method to convert a binary string to a string of characters
+	 * @param bin the binary string to be converted
+	 * @return the string representation
+	 */
 	private static String binaryToString(String bin){
 		String s = "";
 		for(int i=0; i<bin.length(); i=i+8){
@@ -244,7 +265,12 @@ public class Test2 {
 		}
 		return s;
 	}
-	
+	/**
+	 * method to get the total number of bytes required to store data related to the payload.
+	 * This data includes the payload binary bits and a set of bits to hold the number of bits in the payload
+	 * @param bin the payload in binary
+	 * @return the number of bytes required
+	 */
 	private static int noOfRequiredBytes(String bin){
 		int noOfBitsInPayload = bin.length();
 		int noOfBitsForPayloadBinarySize = stringToBinary(noOfBitsInPayload+"").length();
@@ -274,6 +300,12 @@ public class Test2 {
 		return binaryToString(s.substring(32, 32+payloadSize));
 	}
 	
+	/**
+	 * method to return a byte whose LSB has been flipped to contain a bit of the payload binary data
+	 * @param b the payload binary data bit
+	 * @param byt the byte to be flipped
+	 * @return
+	 */
 	private static int flipBit(int b,int byt){
 		int lsb = getLSB(byt);
 		if(b == lsb)
