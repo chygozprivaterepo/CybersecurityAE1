@@ -55,14 +55,19 @@ class Steg
 		}
 	
 		String bitsForSize = String.format("%032d",Integer.parseInt(Integer.toBinaryString(binaryPayload.length())));
-		//String bitsForSize = String.format("%032d",Integer.parseInt(stringToBinary(binaryPayload.length()+"")));
 		String dataToHide = bitsForSize + binaryPayload;
 
 		int i = 0, j=0;
 
-		while(j < noOfPixels && i < dataToHide.length()){
+		while(j < noOfPixels){
+			
+			if(i == dataToHide.length()){
+				break;
+			}
+			
 			int aa = 255;
 			Integer in = pixels.get(j);
+			
 			if(i < dataToHide.length()){
 				int bitToHide1 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int red = (in >> 16) & 0x000000FF;
@@ -91,7 +96,7 @@ class Steg
 			
 			pixels.set(j, aa);
 			j++;
-		}		
+		}
 		
 		String output = "stego_"+cover_filename;
 		saveStegoImage(output, cover_filename, pixels);
@@ -130,7 +135,7 @@ class Steg
 
 		int payloadSize = Integer.parseInt(sizeString,2);
 		int j = 10, k = 0;
-		System.out.println(String.format("Pixelno: %s, PayloadSize: %s", noOfPixels, payloadSize));
+
 		String payloadBinary = "";
 		
 		while(j < noOfPixels){

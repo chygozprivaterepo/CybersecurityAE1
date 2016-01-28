@@ -8,7 +8,7 @@ public class Test2 {
 	
 	public static void main (String [] args){
 		
-		//String payload = "Now let us hide some stufffff";
+		//String payload = "Now let us hide some stuff";
 		String payload = "this thing gotta work now or else i'm going to be really pissed";
 		hideString(payload,"colours.bmp");
 		System.out.println("Extracting...");
@@ -26,43 +26,58 @@ public class Test2 {
 		}
 	
 		String bitsForSize = String.format("%032d",Integer.parseInt(Integer.toBinaryString(binaryPayload.length())));
-		//System.out.println(binaryPayload);
+		System.out.println("Before extraction payload: "+binaryPayload);
 		//System.out.println(bitsForSize);
 		//String bitsForSize = String.format("%032d",Integer.parseInt(stringToBinary(binaryPayload.length()+"")));
 		String dataToHide = bitsForSize + binaryPayload;
-		System.out.println(dataToHide);
+		//System.out.println(dataToHide);
+		//System.out.println(binaryPayload.length());
 
 		int i = 0, j=0;
 
-		while(j < noOfPixels && i < dataToHide.length()){
+		while(j < noOfPixels){
+			
 			int aa = 255;
 			Integer in = pixels.get(j);
-			if(i < dataToHide.length()){
+			int red = (in >> 16) & 0x000000FF;
+			int green = (in >> 8) & 0x000000FF;
+			int blue = in & 0x000000FF;
+			
+			if(i < dataToHide.length()-1){
 				int bitToHide1 = Integer.parseInt(dataToHide.charAt(i)+"");
-				int red = (in >> 16) & 0x000000FF;
 				int newRed = flipBit(bitToHide1, red);
 				aa = (aa << 8) + newRed;
 				i++;
 			}
+			else{
+				int bitToHide1 = Integer.parseInt(dataToHide.charAt(i)+"");
+				int newRed = flipBit(bitToHide1, red);
+				aa = ((aa << 8) + newRed) << 16 | (in & 0x0000FFFF);
+				break;
+			}
 		
 			
-			if(i < dataToHide.length()){
+			if(i < dataToHide.length()-1){
 				int bitToHide2 = Integer.parseInt(dataToHide.charAt(i)+"");
-				int green = (in >> 8) & 0x000000FF;
+
 				int newGreen = flipBit(bitToHide2, green);
 				aa = (aa << 8) + newGreen;
 				i++;
 			}
+			else{
+				int bitToHide2 = Integer.parseInt(dataToHide.charAt(i)+"");
+				int newGreen = flipBit(bitToHide2, green);
+				aa = ((aa << 8) + newGreen ) << 8 | (in & 0x000000FF);
+				break;
+			}
 			
 			
-			if(i < dataToHide.length()){
+			if(i < dataToHide.length()-1){
 				int bitToHide3 = Integer.parseInt(dataToHide.charAt(i)+"");
-				int blue = in & 0x000000FF;
 				int newBlue = flipBit(bitToHide3, blue);
 				aa = (aa << 8) + newBlue;
 				i++;
 			}
-			
 			
 			pixels.set(j, aa);
 			j++;
@@ -94,8 +109,9 @@ public class Test2 {
 			}
 			i++;
 		}
-
+	
 		int payloadSize = Integer.parseInt(sizeString,2);
+
 		int j = 10, k = 0;
 		System.out.println(String.format("Pixelno: %s, PayloadSize: %s", noOfPixels, payloadSize));
 		String payloadBinary = "";
@@ -109,20 +125,30 @@ public class Test2 {
 					k++;
 				}
 				else{
-					int red = (pixels.get(j) >> 16) & 0x000000FF;
-					payloadBinary += getLSB(red);
-					k++;
-					int green = (pixels.get(j) >> 8) & 0x000000FF;
-					payloadBinary += getLSB(green);
-					k++;
-					int blue = pixels.get(j) & 0x000000FF;
-					payloadBinary += getLSB(blue);
-					k++;
+					if(k < payloadSize){
+						int red = (pixels.get(j) >> 16) & 0x000000FF;
+						payloadBinary += getLSB(red);
+						k++;
+					}
+					
+					if(k < payloadSize){
+						int green = (pixels.get(j) >> 8) & 0x000000FF;
+						payloadBinary += getLSB(green);
+						k++;
+					}
+					
+					if(k < payloadSize){
+						int blue = pixels.get(j) & 0x000000FF;
+						payloadBinary += getLSB(blue);
+						k++;
+					}
 				}
+				j++;
 			}
-			j++;
+			else 
+				break;
 		}
-		
+		System.out.println("after extraction payload:  "+payloadBinary);
 		String payload = binaryToString(payloadBinary);
 		System.out.print("The payload is: " + payload);
 		
@@ -225,6 +251,7 @@ public class Test2 {
 		catch(IOException io){
 			io.printStackTrace();
 		}
+		
 	}
 	
 	/**
@@ -234,15 +261,6 @@ public class Test2 {
 	 */
 	private static int getLSB(int component){
 		return component & 0x00000001;
-	}
-	
-	/**
-	 * method to get the number of bytes that can be stored in the cover image
-	 * @param image the cover image
-	 * @return the number of bytes
-	 */
-	private static int getNoOfAvailableBytes(String image){
-		return getImageWidth(image) * getImageHeight(image) * 3; 
 	}
 	
 	/**
@@ -267,7 +285,7 @@ public class Test2 {
 	 */
 	private static String binaryToString(String bin){
 		String s = "";
-		for(int i=0; i<bin.length()-8; i=i+8){
+		for(int i=0; i<bin.length(); i=i+8){
 			String byt = bin.substring(i, i+8);
 			s += (char)Integer.parseInt(byt, 2);
 		}
