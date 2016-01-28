@@ -59,7 +59,7 @@ class Steg
 
 		int i = 0, j=0;
 
-		while(j < noOfPixels){
+while(j < noOfPixels){
 			
 			if(i == dataToHide.length()){
 				break;
@@ -67,28 +67,39 @@ class Steg
 			
 			int aa = 255;
 			Integer in = pixels.get(j);
+			int red = (in >> 16) & 0x000000FF;
+			int green = (in >> 8) & 0x000000FF;
+			int blue = in & 0x000000FF;
 			
-			if(i < dataToHide.length()){
+			if(i < dataToHide.length()-1){
 				int bitToHide1 = Integer.parseInt(dataToHide.charAt(i)+"");
-				int red = (in >> 16) & 0x000000FF;
 				int newRed = swapLsb(bitToHide1, red);
 				aa = (aa << 8) + newRed;
 				i++;
 			}
+			else{
+				int bitToHide1 = Integer.parseInt(dataToHide.charAt(i)+"");
+				int newRed = swapLsb(bitToHide1, red);
+				aa = (((aa << 8) + newRed) << 16) + (in & 0x0000FFFF);
+				
+			}
 		
-			
-			if(i < dataToHide.length()){
+			if(i < dataToHide.length()-1){
 				int bitToHide2 = Integer.parseInt(dataToHide.charAt(i)+"");
-				int green = (in >> 8) & 0x000000FF;
+
 				int newGreen = swapLsb(bitToHide2, green);
 				aa = (aa << 8) + newGreen;
 				i++;
 			}
-			
-			
-			if(i < dataToHide.length()){
+			else{
+				int bitToHide2 = Integer.parseInt(dataToHide.charAt(i)+"");
+				int newGreen = swapLsb(bitToHide2, green);
+				aa = (((aa << 8) + newGreen ) << 8) + (in & 0x000000FF);
+				
+			}
+				
+			if(i < dataToHide.length()-1){
 				int bitToHide3 = Integer.parseInt(dataToHide.charAt(i)+"");
-				int blue = in & 0x000000FF;
 				int newBlue = swapLsb(bitToHide3, blue);
 				aa = (aa << 8) + newBlue;
 				i++;

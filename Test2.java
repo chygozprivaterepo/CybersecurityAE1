@@ -37,6 +37,10 @@ public class Test2 {
 
 		while(j < noOfPixels){
 			
+			if(i == dataToHide.length()){
+				break;
+			}
+			
 			int aa = 255;
 			Integer in = pixels.get(j);
 			int red = (in >> 16) & 0x000000FF;
@@ -52,11 +56,10 @@ public class Test2 {
 			else{
 				int bitToHide1 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int newRed = flipBit(bitToHide1, red);
-				aa = ((aa << 8) + newRed) << 16 | (in & 0x0000FFFF);
-				break;
+				aa = (((aa << 8) + newRed) << 16) + (in & 0x0000FFFF);
+				
 			}
 		
-			
 			if(i < dataToHide.length()-1){
 				int bitToHide2 = Integer.parseInt(dataToHide.charAt(i)+"");
 
@@ -67,11 +70,10 @@ public class Test2 {
 			else{
 				int bitToHide2 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int newGreen = flipBit(bitToHide2, green);
-				aa = ((aa << 8) + newGreen ) << 8 | (in & 0x000000FF);
-				break;
+				aa = (((aa << 8) + newGreen ) << 8) + (in & 0x000000FF);
+				
 			}
-			
-			
+				
 			if(i < dataToHide.length()-1){
 				int bitToHide3 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int newBlue = flipBit(bitToHide3, blue);
