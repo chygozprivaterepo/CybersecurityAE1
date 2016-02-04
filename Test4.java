@@ -4,13 +4,12 @@ import java.util.*;
 
 import javax.imageio.ImageIO;
 
-public class Test3 {
+public class Test4 {
 	
 	public static void main (String [] args){
 		
 		//String payload = "Now let us hide some stufffff";
-		//String payload = "this thing gotta work now or else i'm going to be really pissed";
-		String payload = "testing this shit";
+		String payload = "this thing gotta work now or else i'm going to be really pissed";
 		hideString(payload,"colours.bmp");
 		System.out.println("Extracting...");
 		extractString("stegoimage.bmp");
@@ -26,10 +25,14 @@ public class Test3 {
 			return;
 		}
 	
-		String bitsForSize = String.format("%032d",Integer.parseInt(Integer.toBinaryString(binaryPayload.length())));
-		//System.out.println(binaryPayload);
-		//System.out.println(bitsForSize);
-		//String bitsForSize = String.format("%032d",Integer.parseInt(stringToBinary(binaryPayload.length()+"")));
+		String b1 = Integer.toBinaryString(binaryPayload.length());
+		int b2 = b1.length();
+		String bitsForSize = "";
+		for(int i=0; i<32-b2; i++){
+			bitsForSize += "0";
+		}
+		bitsForSize += b1;
+		
 		String dataToHide = bitsForSize + binaryPayload;
 		System.out.println(dataToHide);
 
@@ -115,30 +118,24 @@ public class Test3 {
 					k++;
 				}
 				else{
-					if(k < payloadSize){
-						int red = (pixels.get(j) >> 16) & 0x000000FF;
-						payloadBinary += getLSB(red);
-						k++;
-					}
-					if(k < payloadSize){
-						int green = (pixels.get(j) >> 8) & 0x000000FF;
-						payloadBinary += getLSB(green);
-						k++;
-					}
-					if(k < payloadSize){
-						int blue = pixels.get(j) & 0x000000FF;
-						payloadBinary += getLSB(blue);
-						k++;
-					}
+					int red = (pixels.get(j) >> 16) & 0x000000FF;
+					payloadBinary += getLSB(red);
+					k++;
+					int green = (pixels.get(j) >> 8) & 0x000000FF;
+					payloadBinary += getLSB(green);
+					k++;
+					int blue = pixels.get(j) & 0x000000FF;
+					payloadBinary += getLSB(blue);
+					k++;
 				}
 			}
-			else
-				break;
 			j++;
 		}
 		
 		String payload = binaryToString(payloadBinary);
 		System.out.print("The payload is: " + payload);
+		
+		
 	}
 	
 	private static ArrayList<Integer> getImagePixels (String imageName){

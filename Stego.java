@@ -4,7 +4,7 @@ import java.util.*;
 
 import javax.imageio.ImageIO;
 
-class Steg
+class stego
 {
 
 
@@ -28,7 +28,7 @@ class Steg
 	 *Default constructor to create a steg object, doesn't do anything - so we actually don't need to declare it explicitly. Oh well. 
 	 */
 
-	public Steg()
+	public stego()
 	{
 
 	}
@@ -54,7 +54,14 @@ class Steg
 			return "Fail";
 		}
 	
-		String bitsForSize = String.format("%032d",Integer.parseInt(Integer.toBinaryString(binaryPayload.length())));
+		//Pad it with zeros to make a total of 32 bits
+		String b1 = Integer.toBinaryString(binaryPayload.length());
+		int b2 = b1.length();
+		String bitsForSize = "";
+		for(int i=0; i<32-b2; i++){
+			bitsForSize += "0";
+		}
+		bitsForSize += b1;
 		String dataToHide = bitsForSize + binaryPayload;
 
 		int i = 0, j=0;
@@ -77,28 +84,27 @@ class Steg
 				aa = (aa << 8) + newRed;
 				i++;
 			}
-			else{
+			 else if(i == dataToHide.length()-1){
 				int bitToHide1 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int newRed = swapLsb(bitToHide1, red);
 				aa = (((aa << 8) + newRed) << 16) + (in & 0x0000FFFF);
-				
+				i++;
 			}
 		
 			if(i < dataToHide.length()-1){
 				int bitToHide2 = Integer.parseInt(dataToHide.charAt(i)+"");
-
 				int newGreen = swapLsb(bitToHide2, green);
 				aa = (aa << 8) + newGreen;
 				i++;
 			}
-			else{
+			else if(i == dataToHide.length()-1){
 				int bitToHide2 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int newGreen = swapLsb(bitToHide2, green);
 				aa = (((aa << 8) + newGreen ) << 8) + (in & 0x000000FF);
-				
+				i++;
 			}
 				
-			if(i < dataToHide.length()-1){
+			if(i <= dataToHide.length()-1){
 				int bitToHide3 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int newBlue = swapLsb(bitToHide3, blue);
 				aa = (aa << 8) + newBlue;
@@ -107,7 +113,7 @@ class Steg
 			
 			pixels.set(j, aa);
 			j++;
-		}
+		}	
 		
 		String output = "stego_"+cover_filename;
 		saveStegoImage(output, cover_filename, pixels);
@@ -143,14 +149,12 @@ class Steg
 			}
 			i++;
 		}
-
+		
 		int payloadSize = Integer.parseInt(sizeString,2);
 		int j = 10, k = 0;
-
 		String payloadBinary = "";
 		
 		while(j < noOfPixels){
-			
 			if(k < payloadSize){
 				if(j == 10){
 					int blue = pixels.get(j) & 0x000000FF;
@@ -158,18 +162,28 @@ class Steg
 					k++;
 				}
 				else{
-					int red = (pixels.get(j) >> 16) & 0x000000FF;
-					payloadBinary += getLSB(red);
-					k++;
-					int green = (pixels.get(j) >> 8) & 0x000000FF;
-					payloadBinary += getLSB(green);
-					k++;
-					int blue = pixels.get(j) & 0x000000FF;
-					payloadBinary += getLSB(blue);
-					k++;
+					if(k < payloadSize){
+						int red = (pixels.get(j) >> 16) & 0x000000FF;
+						payloadBinary += getLSB(red);
+						k++;
+					}
+					
+					if(k < payloadSize){
+						int green = (pixels.get(j) >> 8) & 0x000000FF;
+						payloadBinary += getLSB(green);
+						k++;
+					}
+					
+					if(k < payloadSize){
+						int blue = pixels.get(j) & 0x000000FF;
+						payloadBinary += getLSB(blue);
+						k++;
+					}
 				}
+				j++;
 			}
-			j++;
+			else 
+				break;
 		}
 		
 		String payload = binaryToString(payloadBinary);
@@ -236,6 +250,7 @@ class Steg
 	 * @param s the string to be converted
 	 * @return the binary equivalent
 	 */
+	
 	private String stringToBinary(String s){
 		String bin = "";
 		for(int i=0; i<s.length(); i++)
@@ -245,6 +260,20 @@ class Steg
 		}
 		return bin;
 	}
+	/*
+	private String stringToBinary(String s){
+		String bin = "";
+		for(int i=0; i<s.length(); i++)
+		{
+			String b1 = Integer.toBinaryString((int)s.charAt(i));
+			int b2 = b1.length();
+			for(int j=0; j<8-b2; j++){
+				bin += "0";
+			}
+			bin += b1;
+		}
+		return bin;
+	}*/
 	
 	/**
 	 * method to convert a binary string to a string of characters
@@ -253,12 +282,13 @@ class Steg
 	 */
 	private String binaryToString(String bin){
 		String s = "";
-		for(int i=0; i<bin.length()-8; i=i+8){
-			String byt = bin.substring(i, i+8);
-			s += (char)Integer.parseInt(byt, 2);
+		for(int i=0; i<bin.length(); i=i+8){
+			String byt = bin.substring(i, i+8); //get 8 bits from the binary string
+			s += (char)Integer.parseInt(byt, 2);  //convert it to a character and add to character string
 		}
 		return s;
 	}
+	
 	/**
 	 * method to get the total number of bytes required to store data related to the payload.
 	 * This data includes the payload binary bits and a set of bits to hold the number of bits in the payload
@@ -267,8 +297,8 @@ class Steg
 	 */
 	private int noOfRequiredBytes(String bin){
 		int noOfBitsInPayload = bin.length();
-		int noOfBitsForPayloadBinarySize = stringToBinary(noOfBitsInPayload+"").length();
-		return noOfBitsInPayload + noOfBitsForPayloadBinarySize;
+		//int noOfBitsForPayloadBinarySize = stringToBinary(noOfBitsInPayload+"").length();
+		return noOfBitsInPayload + sizeBitsLength;
 	}
 
 	private ArrayList<Integer> getImagePixels (String imageName){

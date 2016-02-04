@@ -8,11 +8,12 @@ public class Test2 {
 	
 	public static void main (String [] args){
 		
-		//String payload = "Now let us hide some stuff";
-		String payload = "this thing gotta work now or else i'm going to be really pissed";
+		//String payload = "Since we did not provide a default value for the slug, and we already have existing data in the model, then the migrate command will give you two options. Select the option to provide a default, and enter ''. Dont worry this will get updated shortly. Now re-run your population script. Since the save method is called for each Category, the overrided save method will be executed, updating the slug field. Run the server, and inspect the data in the models via the admin interface. In the admin interface you may want it to automatically pre-populate the slug field as your type in the category name. To do this you can update rango/admin.py with the following code:";
+		//String payload = "this thing gotta work now or else i'm going to be really pissed";
+		String payload = "testing this shit";
 		hideString(payload,"colours.bmp");
 		System.out.println("Extracting...");
-		extractString("stegoimage.bmp");
+		extractString("stego_colours.bmp");
 	}
 	
 	public static void hideString(String payload, String cover_filename){
@@ -25,7 +26,18 @@ public class Test2 {
 			return;
 		}
 	
-		String bitsForSize = String.format("%032d",Integer.parseInt(Integer.toBinaryString(binaryPayload.length())));
+		//get the binary equivalent of the number of bits in the payload. 
+		//Pad it with zeros to make a total of 32 bits
+		String b1 = Integer.toBinaryString(binaryPayload.length());
+		int b2 = b1.length();
+		String bitsForSize = "";
+		for(int i=0; i<32-b2; i++){
+			bitsForSize += "0";
+		}
+		bitsForSize += b1;
+		
+		
+		//String bitsForSize = "0000";
 		System.out.println("Before extraction payload: "+binaryPayload);
 		//System.out.println(bitsForSize);
 		//String bitsForSize = String.format("%032d",Integer.parseInt(stringToBinary(binaryPayload.length()+"")));
@@ -53,11 +65,11 @@ public class Test2 {
 				aa = (aa << 8) + newRed;
 				i++;
 			}
-			else{
+			 else if(i == dataToHide.length()-1){
 				int bitToHide1 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int newRed = flipBit(bitToHide1, red);
 				aa = (((aa << 8) + newRed) << 16) + (in & 0x0000FFFF);
-				
+				i++;
 			}
 		
 			if(i < dataToHide.length()-1){
@@ -67,14 +79,14 @@ public class Test2 {
 				aa = (aa << 8) + newGreen;
 				i++;
 			}
-			else{
+			else if(i == dataToHide.length()-1){
 				int bitToHide2 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int newGreen = flipBit(bitToHide2, green);
 				aa = (((aa << 8) + newGreen ) << 8) + (in & 0x000000FF);
-				
+				i++;
 			}
 				
-			if(i < dataToHide.length()-1){
+			if(i <= dataToHide.length()-1){
 				int bitToHide3 = Integer.parseInt(dataToHide.charAt(i)+"");
 				int newBlue = flipBit(bitToHide3, blue);
 				aa = (aa << 8) + newBlue;
@@ -272,9 +284,11 @@ public class Test2 {
 	 */
 	private static String stringToBinary(String s){
 		String bin = "";
+		
 		for(int i=0; i<s.length(); i++)
 		{
-			int bch = Integer.parseInt(Integer.toBinaryString((int)(s.charAt(i))));
+			int bch = Integer.parseInt(Integer.toString((int)(s.charAt(i)),2));
+			System.out.println("i: "+i+", bch: "+bch);
 			bin += String.format("%08d", bch);
 		}
 		return bin;
@@ -301,8 +315,9 @@ public class Test2 {
 	 */
 	private static int noOfRequiredBytes(String bin){
 		int noOfBitsInPayload = bin.length();
-		int noOfBitsForPayloadBinarySize = stringToBinary(noOfBitsInPayload+"").length();
-		return noOfBitsInPayload + noOfBitsForPayloadBinarySize;
+		//int noOfBitsForPayloadBinarySize = stringToBinary(noOfBitsInPayload+"").length();
+		//System.out.println("Finished again");
+		return noOfBitsInPayload + 32;
 	}
 	
 	/**
