@@ -152,6 +152,7 @@ class stego
 			String basename = getBaseName(cover_filename);
 			String output = "stego_" + basename + "." + extension;
 			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(output));
+			
 			//write the header information first
 			for(Integer i: header){
 				bos.write(i);
@@ -291,6 +292,8 @@ class stego
 			
 			//get the payload size as a string of binary digits
 			int payloadSize = getFileSize(file_payload); //size is in number of bits
+			
+			//convert the size to a binary string padded with leading zeros to make up a total of 32 bits
 			String b1 = Integer.toBinaryString(payloadSize);
 			String b3 = "";
 			for(int i=0; i<sizeBitsLength-b1.length(); i++){
@@ -307,6 +310,8 @@ class stego
 			
 			//get the payload extension as a string of binary digits
 			String ext = getExtension(file_payload);
+			
+			//convert the extension to a binary string padded with leading zeros to make up a total of 64 bits
 			b1 = stringToBinary(ext);
 			b3 = "";
 			for(int i=0; i<64-b1.length(); i++){
@@ -364,10 +369,12 @@ class stego
 			for(Integer i: colours){
 				bos.write(i);
 			}
-			
+
+			//close the input and output streams
 			bis.close();
 			bos.close();
-			return output;
+			
+			return output; //return the name of the stego image obscuring the payload file
 			
 		} catch (FileNotFoundException e) {
 			return "Fail because the cover image or the payload file could not be found";
@@ -427,21 +434,18 @@ class stego
 			
 			//extract the payload from the rest of the colour list
 			String output = "original_payload." + payloadExtension;
-			//System.out.println(payloadExtension);
-			//System.out.println(payloadSize);
 			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(output));
 			String payloadBits = "";
 			for(int i=96; i<96 + payloadSize; i++){
 				String bit = getLSB(colours.get(i)) + "";
 				payloadBits += bit;
 			}
-			//String payload = binaryToString(payloadBits);
 
 			//split the payloadBits into bytes and write each byte to the output stream
 			for(int i=0; i<payloadBits.length(); i = i+byteLength){
-				String s = payloadBits.substring(i, i+byteLength);
-				int ss = Integer.parseInt(s,2);
-				bos.write(ss);	
+				String s = payloadBits.substring(i, i+byteLength); //get a byte
+				int ss = Integer.parseInt(s,2); //convert to an integer
+				bos.write(ss);	//write the integer to the file
 			}
 			
 			bos.close(); //close the output stream
