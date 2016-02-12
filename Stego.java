@@ -50,21 +50,20 @@ class stego
 		int noOfPixels = getImageWidth(cover_filename) * getImageHeight(cover_filename);
 		int nrb = noOfRequiredBytes(binaryPayload);
 		if(nrb > noOfPixels * 3){
-			System.out.println("The chosen image does not have sufficient pixels to hide data");
-			return "Fail";
+			return "Fail because the chosen image does not have sufficient pixels to hide data";
 		}
 	
 		//Pad it with zeros to make a total of 32 bits
 		String b1 = Integer.toBinaryString(binaryPayload.length());
 		int b2 = b1.length();
 		String bitsForSize = "";
-		for(int i=0; i<32-b2; i++){
+		for(int i=0; i<sizeBitsLength-b2; i++){
 			bitsForSize += "0";
 		}
 		bitsForSize += b1;
 		String dataToHide = bitsForSize + binaryPayload;
 
-		int i = 0, j=0;
+		int i = 0, j = 0;
 
 		while(j < noOfPixels){
 			
@@ -119,6 +118,7 @@ class stego
 		saveStegoImage(output, cover_filename, pixels);
 		return output;
 	} 
+	
 	//TODO you must write this method
 	/**
 	The extractString method should extract a string which has been hidden in the stegoimage
@@ -200,7 +200,194 @@ class stego
 	 */
 	public String hideFile(String file_payload, String cover_image)
 	{
-		return null;
+		ArrayList<Integer> pixels = getImagePixels(cover_image);
+		String extensionBits = getFileExtensionBits(file_payload);
+		String sizeBits = getFileSizeBits(file_payload);
+		List<Integer> payloadBinary = getFileBytes(file_payload);
+		
+		int totalSize = sizeBitsLength + extBitsLength + getFileSize(file_payload);
+		int noOfPixels = getImageWidth(cover_image) * getImageHeight(cover_image);
+		
+		if(totalSize > noOfPixels * 3){
+			return "Fail because the chosen image does not have sufficient pixels to hide data";
+		}
+		
+		//hide the size bits in the first 32 colour components of the pixels in the cover image
+		int i = 0, j = 0;
+		while(i < noOfPixels){
+			if(j == sizeBitsLength){
+				break;
+			}
+			
+			int in = pixels.get(i);
+			
+			int aa = 255;
+			int red = (in >> 16) & 0x000000FF;
+			int green = (in >> 8) & 0x000000FF;
+			int blue = in & 0x000000FF;
+			
+			if(j < sizeBitsLength){
+				int bitToHide = Integer.parseInt(sizeBits.charAt(j) + "");
+				int newRed = swapLsb(red, bitToHide);
+				aa = (aa << 8) + newRed;
+				j++;
+			}
+			
+			if(j < sizeBitsLength){
+				int bitToHide = Integer.parseInt(sizeBits.charAt(j) + "");
+				int newGreen = swapLsb(green, bitToHide);
+				aa = (aa << 8) + newGreen;
+				j++;
+			}
+			
+			if(j < sizeBitsLength){
+				int bitToHide = Integer.parseInt(sizeBits.charAt(j) + "");
+				int newBlue = swapLsb(blue, bitToHide);
+				aa = (aa << 8) + newBlue;
+				j++;
+			}
+			pixels.set(i, aa);
+			i++;
+		}
+		
+		//hide the extension bits in the next 64 colour components of the pixels in the cover image
+		int k = 0;
+		while(i < noOfPixels){
+			if(k == extBitsLength){
+				break;
+			}
+			
+			int in = pixels.get(i);
+			
+			int aa = 255;
+			int red = (in >> 16) & 0x000000FF;
+			int green = (in >> 8) & 0x000000FF;
+			int blue = in & 0x000000FF;
+			
+			if(i == 10){
+				//the red and green components of the pixel at index 10 of the pixels list already contain data for the sizeBits
+				//and should not be changed. Change the blue component only
+				if(k < extBitsLength){
+					int bitToHide = Integer.parseInt(extensionBits.charAt(k) + "");
+					int newBlue = swapLsb(blue, bitToHide);
+					aa = (aa & 0xFFFFFF00) | newBlue;
+					k++;
+				}
+			}
+			else {
+				if(k < extBitsLength){
+					int bitToHide = Integer.parseInt(extensionBits.charAt(k) + "");
+					int newRed = swapLsb(red, bitToHide);
+					aa = (aa << 8) + newRed;
+					k++;
+				}
+				
+				if(k < extBitsLength){
+					int bitToHide = Integer.parseInt(extensionBits.charAt(k) + "");
+					int newGreen = swapLsb(green, bitToHide);
+					aa = (aa << 8) + newGreen;
+					k++;
+				}
+				
+				if(k < extBitsLength){
+					int bitToHide = Integer.parseInt(extensionBits.charAt(k) + "");
+					int newBlue = swapLsb(blue, bitToHide);
+					aa = (aa << 8) + newBlue;
+					k++;
+				}
+			}
+			pixels.set(j, aa);
+			i++;
+		}
+		
+		//hide the payload bits in the rest of the pixels
+		System.out.println("i is " + i);
+		System.out.println("j is " + j);
+		System.out.println("k is " + k);
+		
+		/*for(Integer inb: payloadBinary){
+			if(inb != null){
+				String bin = String.format("%08s", Integer.toBinaryString(inb));
+				int curr = 0;
+				while(i < noOfPixels){
+					int in = pixels.get(i);
+					int aa = 255;
+					int red = (in >> 16) & 0x000000FF;
+					int green = (in >> 8) & 0x000000FF;
+					int blue = in & 0x000000FF;
+					
+					while(curr < bin.length()){
+						int bitToHide = Integer.parseInt(bin.charAt(curr)+"");
+						
+						int newRed = swapLsb(red, bitToHide);
+						aa = (aa << 8) + newRed;
+						curr++;
+					}
+				}
+			}
+			*/
+		
+			String dataToHide = "";
+			for(Integer inb: payloadBinary){
+				if(inb != null){
+					dataToHide += integerToBinary(inb);
+				}
+			}
+			
+			i = 0;
+
+			while(j < noOfPixels){
+				
+				if(i == dataToHide.length()){
+					break;
+				}
+				
+				int aa = 255;
+				Integer in = pixels.get(j);
+				int red = (in >> 16) & 0x000000FF;
+				int green = (in >> 8) & 0x000000FF;
+				int blue = in & 0x000000FF;
+				
+				if(i < dataToHide.length()-1){
+					int bitToHide1 = Integer.parseInt(dataToHide.charAt(i)+"");
+					int newRed = swapLsb(bitToHide1, red);
+					aa = (aa << 8) + newRed;
+					i++;
+				}
+				 else if(i == dataToHide.length()-1){
+					int bitToHide1 = Integer.parseInt(dataToHide.charAt(i)+"");
+					int newRed = swapLsb(bitToHide1, red);
+					aa = (((aa << 8) + newRed) << 16) + (in & 0x0000FFFF);
+					i++;
+				}
+			
+				if(i < dataToHide.length()-1){
+					int bitToHide2 = Integer.parseInt(dataToHide.charAt(i)+"");
+					int newGreen = swapLsb(bitToHide2, green);
+					aa = (aa << 8) + newGreen;
+					i++;
+				}
+				else if(i == dataToHide.length()-1){
+					int bitToHide2 = Integer.parseInt(dataToHide.charAt(i)+"");
+					int newGreen = swapLsb(bitToHide2, green);
+					aa = (((aa << 8) + newGreen ) << 8) + (in & 0x000000FF);
+					i++;
+				}
+					
+				if(i <= dataToHide.length()-1){
+					int bitToHide3 = Integer.parseInt(dataToHide.charAt(i)+"");
+					int newBlue = swapLsb(bitToHide3, blue);
+					aa = (aa << 8) + newBlue;
+					i++;
+				}
+				
+				pixels.set(j, aa);
+				j++;
+			}	
+		
+			String output = "stego_"+cover_image;
+			saveStegoImage(output, cover_image, pixels);
+			return output;
 	}
 
 	//TODO you must write this method
@@ -212,6 +399,85 @@ class stego
 	 */
 	public String extractFile(String stego_image)
 	{
+		ArrayList<Integer> pixels = getImagePixels(stego_image);
+		int noOfPixels = getImageWidth(stego_image) * getImageHeight(stego_image);
+		
+		//get the no of bits of the payload
+		int i = 0;
+		String sizeString = "";
+		while(i < 11){
+			if(i < 10){
+				int red = (pixels.get(i) >> 16) & 0x000000FF;
+				sizeString += getLSB(red);
+				int green = (pixels.get(i) >> 8) & 0x000000FF;
+				sizeString += getLSB(green);
+				int blue = pixels.get(i) & 0x000000FF;
+				sizeString += getLSB(blue);
+			}
+			else{
+				int red = (pixels.get(i) >> 16) & 0x000000FF;
+				sizeString += getLSB(red);
+				int green = (pixels.get(i) >> 8) & 0x000000FF;
+				sizeString += getLSB(green);
+			}
+			i++;
+		}
+		
+		Integer payloadSize = Integer.parseInt(sizeString,2);
+		
+		//get the file extension
+		i = 10;
+		String extString = "";
+		while(i < 31){
+			if(i == 10){
+				int blue = pixels.get(i) & 0x000000FF;
+				extString += getLSB(blue);
+			}
+			else{
+				int red = (pixels.get(i) >> 16) & 0x000000FF;
+				extString += getLSB(red);
+				int green = (pixels.get(i) >> 8) & 0x000000FF;
+				extString += getLSB(green);
+				int blue = pixels.get(i) & 0x000000FF;
+				extString += getLSB(blue);
+			}
+			i++;
+		}
+		String extension = binaryToString(extString);
+		System.out.println("The stego extension is " + extension);
+		
+		/*
+		//get the payload
+		int j = 32, k = 0;
+		String payloadBinary = "";
+		
+		while(j < noOfPixels){
+			if(k < payloadSize){
+					if(k < payloadSize){
+						int red = (pixels.get(j) >> 16) & 0x000000FF;
+						payloadBinary += getLSB(red);
+						k++;
+					}
+					
+					if(k < payloadSize){
+						int green = (pixels.get(j) >> 8) & 0x000000FF;
+						payloadBinary += getLSB(green);
+						k++;
+					}
+					
+					if(k < payloadSize){
+						int blue = pixels.get(j) & 0x000000FF;
+						payloadBinary += getLSB(blue);
+						k++;
+					}
+				j++;
+			}
+			else 
+				break;
+		}
+		
+		String payload = binaryToString(payloadBinary);
+		return payload;*/
 		return null;
 	}
 
@@ -280,11 +546,12 @@ class stego
 	 * @param bin the binary string to be converted
 	 * @return the string representation
 	 */
-	private String binaryToString(String bin){
+	public String binaryToString(String bin){
 		String s = "";
 		for(int i=0; i<bin.length(); i=i+8){
 			String byt = bin.substring(i, i+8); //get 8 bits from the binary string
-			s += (char)Integer.parseInt(byt, 2);  //convert it to a character and add to character string
+			if(!byt.equals("00000000"))
+				s += (char)Integer.parseInt(byt, 2);  //convert it to a character and add to character string
 		}
 		return s;
 	}
@@ -309,7 +576,7 @@ class stego
 			imageIn = ImageIO.read(new File(imageName));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("The image specified does not exist or could not be read");
 		}
 		int width = imageIn.getWidth();
 		int height = imageIn.getHeight();
@@ -397,5 +664,113 @@ class stego
 		catch(IOException io){
 			io.printStackTrace();
 		} 
+	}
+	
+	/**
+	 * method to get the extension of a file
+	 * @param fname the name of the file
+	 * @return the extension
+	 */
+	public String getExtension(String fname){
+		int i = fname.lastIndexOf('.');
+		String ext = fname.substring(i+1);
+		return ext;
+	}
+	
+	/**
+	 * get the bytes that make up the file and put them in a list
+	 * @param fname the name of the file
+	 * @return the list containing the bytes
+	 */
+	private List<Integer> getFileBytes(String fname){
+		/*List<Integer> list = null;
+		try {
+			FileInputStream fis = new FileInputStream(new File(fname));
+			list = new ArrayList<Integer>();
+			while(fis.read() != -1){
+				list.add(fis.read());
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e){
+			e.printStackTrace();
+		}*/
+		List<Integer> payloadBinary = null;
+		try{
+			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(fname));
+			payloadBinary = new ArrayList<Integer>();
+			
+			for(;;){
+				int c = bis.read();
+				if (c == -1)
+					break;
+				else{
+					payloadBinary.add(c);
+				}
+			}
+			bis.close();	
+		} catch (FileNotFoundException e){
+			e.printStackTrace();
+		} catch (IOException e){
+			e.printStackTrace();
+		}
+		
+		return payloadBinary;
+	}
+	
+	/**
+	 * method to get the binary representation of the file extension
+	 * @param fname the name of the file
+	 * @return the binary representation of the extension
+	 */
+	public String getFileExtensionBits(String fname){
+		String ext = getExtension(fname);
+		String bi = stringToBinary(ext);
+		int b1 = bi.length();
+		
+		String bits = "";
+		for(int i=0; i<extBitsLength - b1; i++){
+			bits += "0";
+		}
+		bits += bi;
+		return bits;
+	}
+	
+	/**
+	 * method to get the binary representation of the size of the file
+	 * @param fname the name of the file
+	 * @return the binary representation of the size
+	 */
+	public String getFileSizeBits(String fname){
+		int size = getFileSize(fname);
+		String b = Integer.toBinaryString(size);
+		String bb = "";
+		for(int i=0; i < sizeBitsLength - b.length(); i++){
+			bb += "0";
+		}
+		String bits = bb + b;
+		return bits;
+	}
+	
+	/**
+	 * a method to return the size of the file in terms of how many bits are in the file
+	 * @return the size of the file in bits
+	 */
+	public int getFileSize(String fname)
+	{
+		File file = new File(fname);
+		return (int)file.length()* byteLength;
+	}
+	
+	private String integerToBinary(int i){
+		String s = Integer.toBinaryString(i);
+		int b2 = s.length();
+		String bin = "";
+		for(int j=0; j<8-b2; j++){
+			bin += "0";
+		}
+		s = bin + s;
+		return s;
 	}
 }
