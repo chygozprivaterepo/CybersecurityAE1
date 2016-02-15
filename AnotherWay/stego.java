@@ -128,7 +128,7 @@ class stego
 			//		psList.get(0),psList.get(1),psList.get(2),psList.get(3));
 			
 			//check if the cover image has enough pixels to hide the payload
-			if(payloadSize > colours.size()){
+			if(payloadSize > colours.size() - 54){
 				return "Fail because the selected cover image does not have sufficient pixels to hide the payload string";
 			}
 			
@@ -209,9 +209,22 @@ class stego
 			
 			//list containing the colours
 			List<Integer> colours = new ArrayList<Integer>();
+		
+			//extract payload size bits from the first 32 colour components
+			String payloadSizeBits = "";
+			//get the first 32 colour components
+			for(int i=0; i<sizeBitsLength; i++){
+				int c = bis.read();
+				if(c == -1)
+					break;
+				else{
+					payloadSizeBits += getLSB(c) + "";
+				}
+			}
+			int payloadSize = Integer.parseInt(payloadSizeBits, 2); //gets the size of the payload	
 			
-			//get the colours
-			for(;;){
+			//get the other colour components
+			for(int i=0; i<payloadSize;i++){
 				int c = bis.read();
 				if(c == -1)
 					break;
@@ -220,16 +233,9 @@ class stego
 			}
 			bis.close(); //close the input stream
 			
-			//extract payload size bits from the first 32 colour components
-			String payloadSizeBits = "";
-			for(int i=0; i<sizeBitsLength; i++){
-				payloadSizeBits += getLSB(colours.get(i)) + "";
-			}
-			int payloadSize = Integer.parseInt(payloadSizeBits, 2);
-			
 			//extract the payload from the rest of the colour list
 			String payloadBits = "";
-			for(int i=sizeBitsLength; i<sizeBitsLength + payloadSize; i++){
+			for(int i=0; i<payloadSize; i++){
 				payloadBits += getLSB(colours.get(i)) + "";
 			}
 			String payload = binaryToString(payloadBits);
@@ -405,39 +411,49 @@ class stego
 					header.add(c);
 			}
 			
-			//list containing the colours
-			List<Integer> colours = new ArrayList<Integer>();
+			//extract payload size bits from the first 32 colour components
+			String payloadSizeBits = "";
+			//get the first 32 colour components
+			for(int i=0; i<sizeBitsLength; i++){
+				int c = bis.read();
+				if(c == -1)
+					break;
+				else{
+					payloadSizeBits += getLSB(c) + "";
+				}
+			}
+			int payloadSize = Integer.parseInt(payloadSizeBits, 2); //gets the size of the payload	
 			
-			//get the colours
-			for(;;){
+			//extract the payload extension from the next 64 colour components
+			String payloadExtensionBits = "";
+			for(int i=0; i<extBitsLength; i++){
 				int c = bis.read();
 				if(c == -1)
 					break;
 				else
-					colours.add(c);
-			}
-			bis.close(); //close the input stream
-			
-			//extract payload size bits from the first 32 colour components
-			String payloadSizeBits = "";
-			for(int i=0; i<sizeBitsLength; i++){
-				payloadSizeBits += getLSB(colours.get(i)) + "";
-			}
-			int payloadSize = Integer.parseInt(payloadSizeBits, 2);
-			
-			//extract the payload extension from the next 64 colour components
-			String payloadExtensionBits = "";
-			for(int i=sizeBitsLength; i<sizeBitsLength + 64; i++){
-				payloadExtensionBits += getLSB(colours.get(i)) + "";
+					payloadExtensionBits += getLSB(c) + "";
 			}
 			String payloadExtension = binaryToString(payloadExtensionBits);
 			
-			//extract the payload from the rest of the colour list
+			//list containing the payload
+			List<Integer> payload = new ArrayList<Integer>();
+			
+			//get the payload
+			for(int i=0; i<payloadSize; i++){
+				int c = bis.read();
+				if(c == -1)
+					break;
+				else
+					payload.add(c);
+			}
+			bis.close(); //close the input stream
+			
+			//extract the payload content
 			String output = "original_payload." + payloadExtension;
 			BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(output));
 			String payloadBits = "";
-			for(int i=96; i<96 + payloadSize; i++){
-				String bit = getLSB(colours.get(i)) + "";
+			for(int i=0; i<payload.size(); i++){
+				String bit = getLSB(payload.get(i)) + "";
 				payloadBits += bit;
 			}
 
